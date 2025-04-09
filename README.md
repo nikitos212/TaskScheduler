@@ -84,7 +84,7 @@ std::cout << "x3 = " << scheduler.getResult<float>(id7) << std::endl;
 
 ## ТеорМин
 
-1. Labmda
+1. Lambda
 2. Type erasure (какую проблему решает, как реализуется, примеры из стандартной библиотеки)
 3. Value categories
 4. RValue reference
