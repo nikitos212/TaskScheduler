@@ -1,6 +1,5 @@
 #include <cmath>
 #include <iostream>
-
 #include "scheduler.h"
 
 struct AddNumber {

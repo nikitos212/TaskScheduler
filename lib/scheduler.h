@@ -160,8 +160,8 @@ constexpr bool is_future_result<FutureResult<T>> = true;
 
 template<typename T>
 auto resolve_arg(T&& arg, TTaskScheduler* scheduler) {
-    if constexpr (is_future_result<std::decay_t<T>>) {
-        using ResultType = typename std::decay_t<T>::ResultType;
+    if constexpr (is_future_result<typename remove_const<typename remove_reference<T>::type>::type>) {
+        using ResultType = typename remove_const<typename remove_reference<T>::type>::type::ResultType;
         return scheduler->getResult<ResultType>(arg.getID());
     } else {
         return forward<T>(arg);

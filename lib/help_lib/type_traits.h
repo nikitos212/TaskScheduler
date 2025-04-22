@@ -14,6 +14,18 @@ struct remove_reference<T&> : type_identity<T> {};
 template<typename T> 
 struct remove_reference<T&&> : type_identity<T> {};
 
+template<typename T> 
+struct remove_const : type_identity<T> {};
+
+template<typename T> 
+struct remove_const<const T> : type_identity<T> {};
+
+template<typename T> 
+struct remove_const<const T&> : type_identity<T> {};
+
+template<typename T> 
+struct remove_const<const T&&> : type_identity<T> {};
+
 template<typename T>
 using remove_reference_t = typename remove_reference<T>::type;
 

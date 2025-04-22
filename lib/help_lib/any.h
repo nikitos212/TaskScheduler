@@ -1,6 +1,5 @@
 #pragma once
 #include <typeinfo>
-#include <utility>
 #include "move.h"
 
 class Any {
@@ -36,7 +35,7 @@ public:
     Any(const T& value) : content(new Holder<T>(value)) {}
 
     template<typename T>
-    Any(T&& value) : content(new Holder<std::decay_t<T>>(forward<T>(value))) {}
+    Any(T&& value) : content(new Holder<typename remove_const<typename remove_reference<T>::type>::type>(forward<T>(value))) {}
 
     Any(const Any& other) : content(other.content ? other.content->clone() : nullptr) {}
 
