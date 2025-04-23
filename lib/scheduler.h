@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include "lib/help_lib/invoke.h"
 #include "lib/help_lib/any.h"
+#include <concepts>
 
 class TTaskScheduler;
 
@@ -38,7 +39,7 @@ struct Task<Func> : public WTask {
     Task(Func&& f) : func(forward<Func>(f)) {}
 
     Any& execute(TTaskScheduler* scheduler) override {
-        if constexpr (is_same_v<Any, void>) {
+        if constexpr (is_same_v<decltype(invoke(func)), void>) {
             invoke(func);
         } else {
             result = invoke(func);
@@ -62,7 +63,7 @@ struct Task<Func, Arg1> : public WTask {
             return result;
         }
         auto resolved_arg1 = resolve_arg(arg1, scheduler);
-        if constexpr (is_same_v<Any, void>) {
+        if constexpr (is_same_v<decltype(invoke(func, resolved_arg1)), void>) {
             invoke(func, resolved_arg1);
         } else {
             result = invoke(func, resolved_arg1);
@@ -89,7 +90,7 @@ struct Task<Func, Arg1, Arg2> : public WTask {
         }
         auto resolved_arg1 = resolve_arg(arg1, scheduler);
         auto resolved_arg2 = resolve_arg(arg2, scheduler);
-        if constexpr (is_same_v<Any, void>) {
+        if constexpr (is_same_v<decltype(invoke(func, resolved_arg1, resolved_arg2)), void>) {
             invoke(func, resolved_arg1, resolved_arg2);
         } else {
             result = invoke(func, resolved_arg1, resolved_arg2);
@@ -102,6 +103,7 @@ struct Task<Func, Arg1, Arg2> : public WTask {
 class TTaskScheduler {
     public:
         template<typename Func>
+        requires std::invocable<Func>
         int add(Func&& f) {
             tasks[curId] = std::make_unique<Task<Func>>(
                 forward<Func>(f)
@@ -110,6 +112,7 @@ class TTaskScheduler {
         }
         
         template<typename Func, typename Arg1>
+        requires std::invocable<Func, decltype(resolve_arg(std::declval<Arg1>(), (TTaskScheduler*)nullptr))>
         int add(Func&& f, Arg1&& arg1) {
             tasks[curId] = std::make_unique<Task<Func, Arg1>>(
                 forward<Func>(f),
@@ -119,6 +122,7 @@ class TTaskScheduler {
         }
         
         template<typename Func, typename Arg1, typename Arg2>
+        requires std::invocable<Func, decltype(resolve_arg(std::declval<Arg1>(), (TTaskScheduler*)nullptr)), decltype(resolve_arg(std::declval<Arg2>(), (TTaskScheduler*)nullptr))>
         int add(Func&& f, Arg1&& arg1, Arg2&& arg2) {
             tasks[curId] = std::make_unique<Task<Func, Arg1, Arg2>>(
                 forward<Func>(f),
@@ -136,8 +140,9 @@ class TTaskScheduler {
         template<typename T>
         T getResult(int id) {
             auto it = tasks.find(id);
-            if (it == tasks.end()) throw "Invalid task ID";
-            return any_cast<T>(it->second->execute(this));
+            if (it == tasks.end())  throw std::runtime_error("Invalid task ID: " + std::to_string(id));
+            if constexpr (!is_same_v<T, void>) return any_cast<T>(it->second->execute(this));
+            else it->second->execute(this);
         }
     
         void executeAll() {
